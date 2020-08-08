@@ -1,0 +1,260 @@
+//Install the NeoPixel library
+//Board is an Arduino Nano with an ATmega328P (old bootloader)
+
+#include <Adafruit_NeoPixel.h>
+#ifdef __AVR__
+#include <avr/power.h>
+#endif
+
+#define PIN 6
+#define LEDs 25
+
+const int buttonPin = 2;    // the number of the pushbutton pin
+const int ledPin = 13;      // the number of the LED pi
+const int buttonIsPressed = LOW;
+const int buttonNotPressed = HIGH;
+const int shortPress = 400;
+const int oneSecond = 800;
+const int twoSeconds = 1600;
+const int threeSeconds = 3000;
+const int fiveSeconds = 5000;
+
+int ledState = LOW;         // the current state of the output pin
+int buttonState;             // the current reading from the input pin
+int lastButtonState = LOW;   // the previous reading from the input pin
+int buttonPress;
+
+
+int owlSelect = 1;
+int nameSelect = 1;
+
+unsigned long startOfButtonPress = 0;
+unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
+unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
+unsigned long buttonTimer;
+unsigned long idleTimer;
+
+
+unsigned long durationOfButtonPress = 0;
+unsigned long longPress = 1000;
+
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(LEDs, PIN, NEO_GRB + NEO_KHZ800);    //setup NeoPixel 'strip' command
+
+void setup() {
+  Serial.begin(9600);
+  
+  pinMode(buttonPin, INPUT_PULLUP);
+  pinMode(ledPin, OUTPUT);
+
+  // set initial LED state
+  digitalWrite(ledPin, ledState);
+
+  //NeoPixel (strip) setup commands
+  strip.begin();
+  //strip.setBrightness(50);    //currently not used
+  strip.show(); // Initialize all pixels to 'off'. Used later to submit commands
+}
+
+
+
+void loop() {
+  toggleModeOwl(owlSelect);
+  toggleModeName(nameSelect);
+
+   
+  buttonPress = digitalRead(buttonPin);
+
+  if (buttonPress != buttonNotPressed) {
+    startOfButtonPress = millis();                              //grab the current count on the clock
+    while (buttonPress == buttonIsPressed){                     //Sit here until the button is released
+      buttonPress = digitalRead(buttonPin);
+    }
+    
+    durationOfButtonPress = (millis() - startOfButtonPress);    //Calculate how long button was pressed
+    if (durationOfButtonPress > twoSeconds){                //We're looking for a button press over two seconds to go into modes
+      confirmButtonPress();
+      buttonOptionsOwl();
+    }
+    durationOfButtonPress = 0;
+    delay(10);
+  }
+
+}
+
+
+void buttonOptionsOwl(){
+  buttonTimer = millis();
+  idleTimer = millis();
+  while ((millis()-idleTimer) < 10000){
+    buttonPress = digitalRead(buttonPin);
+    if (buttonPress != buttonNotPressed) {
+      buttonTimer = millis();
+      startOfButtonPress = millis();                              //grab the current count on the clock
+      while (buttonPress == buttonIsPressed){                     //Sit here until the button is released
+        buttonPress = digitalRead(buttonPin);
+      }
+      durationOfButtonPress = (millis() - startOfButtonPress);    //Calculate how long button was pressed
+      if (durationOfButtonPress <= shortPress){
+        idleTimer = millis();                                     //resetting idle timer since a button was pressed
+        if (owlSelect < 5){                                       //Advance Owl Mode selection
+          owlSelect++;
+        }else{
+          owlSelect = 1;
+        }
+        toggleModeOwl(owlSelect);
+        delay(50);
+      }else if ((durationOfButtonPress > twoSeconds) && (durationOfButtonPress <= fiveSeconds)){
+        confirmButtonPress();
+        buttonOptionsName();
+        break;
+      }else{
+        return;
+      }
+      durationOfButtonPress = 0;
+    }
+  }
+}
+
+void buttonOptionsName(){
+  buttonTimer = millis();
+  idleTimer = millis();
+  while ((millis()-idleTimer) < 10000){
+    buttonPress = digitalRead(buttonPin);
+    if (buttonPress != buttonNotPressed) {
+      buttonTimer = millis();
+      startOfButtonPress = millis();                              //grab the current count on the clock
+      while (buttonPress == buttonIsPressed){                     //Sit here until the button is released
+        buttonPress = digitalRead(buttonPin);
+      }
+      durationOfButtonPress = (millis() - startOfButtonPress);    //Calculate how long button was pressed
+      if (durationOfButtonPress <= shortPress){
+        idleTimer = millis();                                     //resetting idle timer since a button was pressed
+        if (nameSelect < 5){                                         //Advance Owl Mode selection
+          nameSelect++;
+        }else{
+          nameSelect = 1;
+        }
+        toggleModeName(nameSelect);
+        delay(10);
+      }else if ((durationOfButtonPress > twoSeconds) && (durationOfButtonPress <= fiveSeconds)){
+        break;
+      }else{
+        return;
+      }
+      durationOfButtonPress = 0;
+    }
+  }
+}
+
+void toggleModeOwl(int mode){ 
+  switch (mode) {
+    case 1:
+      for (int i = 0; i < 20; i++){
+        strip.setPixelColor(i, strip.Color(100,0,0));
+        strip.show();
+      }
+      break;
+    case 2:
+      for (int i = 0; i < 20; i++){
+        strip.setPixelColor(i, strip.Color(0,100,0));
+        strip.show();
+      }
+      break;
+    case 3:
+      for (int i = 0; i < 20; i++){
+        strip.setPixelColor(i, strip.Color(0,0,100));
+        strip.show();
+      }
+      break;
+    case 4:
+      for (int i = 0; i < 20; i++){
+        strip.setPixelColor(i, strip.Color(0,50,15));
+        strip.show();
+      }
+      break;
+    case 5:
+      for (int i = 0; i < 20; i++){
+        strip.setPixelColor(i, strip.Color(100,0,50));
+        strip.show();
+      }
+      break;
+  }
+}
+
+void toggleModeName(int mode){
+  switch (mode) {
+    case 1:
+      for (int i = 20; i < 25; i++){
+        strip.setPixelColor(i, strip.Color(150,0,0));
+        strip.show();
+      }
+      break;
+    case 2:
+      for (int i = 20; i < 25; i++){
+        strip.setPixelColor(i, strip.Color(0,150,0));
+        strip.show();
+      }
+      break;
+    case 3:
+      for (int i = 20; i < 25; i++){
+        strip.setPixelColor(i, strip.Color(0,0,150));
+        strip.show();
+      }
+      break;
+    case 4:
+      for (int i = 20; i < 25; i++){
+        strip.setPixelColor(i, strip.Color(0,50,15));
+        strip.show();
+      }
+      break;
+    case 5:
+      for (int i = 20; i < 25; i++){
+        strip.setPixelColor(i, strip.Color(150,0,100));
+        strip.show();
+      }
+      break;
+  }
+}
+
+void confirmButtonPress(){
+  for (int i = 0; i <= 10; i++){
+    digitalWrite(ledPin, HIGH);
+    delay(35);
+    digitalWrite(ledPin, LOW);
+    delay(35);
+  }
+}
+
+void owlColor(){
+  
+}
+void justColor(){
+  //strip.setPixelColor(LED# 0-24, strip.Color(R,G,B));  
+  strip.setPixelColor(0, strip.Color(30,0,0));
+//  strip.setPixelColor(1, strip.Color(30,0,0));
+//  strip.setPixelColor(2, strip.Color(30,0,0));
+//  strip.setPixelColor(3, strip.Color(30,0,0));
+//  strip.setPixelColor(4, strip.Color(30,0,0));
+//  strip.setPixelColor(5, strip.Color(30,0,0));
+//  strip.setPixelColor(6, strip.Color(30,0,0));
+//  strip.setPixelColor(7, strip.Color(30,0,0));
+//  strip.setPixelColor(8, strip.Color(30,0,0));
+//  strip.setPixelColor(9, strip.Color(30,0,0));
+//  strip.setPixelColor(10, strip.Color(30,0,0));
+//  strip.setPixelColor(11, strip.Color(30,0,0));
+//  strip.setPixelColor(12, strip.Color(30,0,0));
+//  strip.setPixelColor(13, strip.Color(30,0,0));
+//  strip.setPixelColor(14, strip.Color(30,0,0));
+//  strip.setPixelColor(15, strip.Color(30,0,0));
+//  strip.setPixelColor(16, strip.Color(30,0,0));
+//  strip.setPixelColor(17, strip.Color(30,0,0));
+//  strip.setPixelColor(18, strip.Color(30,0,0));
+//  strip.setPixelColor(19, strip.Color(30,0,0));
+  
+  strip.setPixelColor(20, strip.Color(0,30,15));
+//  strip.setPixelColor(21, strip.Color(0,30,15));
+//  strip.setPixelColor(22, strip.Color(0,30,15));
+//  strip.setPixelColor(23, strip.Color(0,30,15));
+//  strip.setPixelColor(24, strip.Color(0,30,15));
+  strip.show();
+}
