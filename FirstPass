@@ -6,12 +6,14 @@
 #include <avr/power.h>
 #endif
 
-#define LED 13              // LED PIN
+#define LED 13              // LED PIN on nano
 #define DATA_PIN 6          // Drives data to the stripe
 #define PUSH_BTN 2          // push button pin - active low
 #define LEDs 25             // number leds 
 #define BTN_ACTIVE LOW
 #define BTN_INACTIVE HIGH
+#define DEBUG false
+#define BRIGHTNESS 50
 
 // press duration
 const int shortPress = 400;
@@ -39,24 +41,25 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(LEDs, DATA_PIN, NEO_GRB + NEO_KHZ800
 
 void setup()
 {
-  Serial.begin(9600);
+  if (DEBUG) Serial.begin(9600);
+  if (DEBUG) Serial.println("---- starting script ----");
 
   pinMode(PUSH_BTN, INPUT_PULLUP);
   pinMode(LED, OUTPUT);
 
-  // set initial LED state
+  // set initial LED state (on nano)
   digitalWrite(LED, led_start_state);
 
-  //NeoPixel (strip) setup commands
+  // NeoPixel (strip) setup commands
   strip.begin();
-  //strip.setBrightness(50);    //currently not used
-  strip.show(); // Initialize all pixels to 'off'. Used later to submit commands
+  strip.setBrightness(BRIGHTNESS);   
+  strip.show(); 
 }
 
 void loop()
 {
-  toggleModeOwl(owl_mode);
-  toggleModeName(name_mode);
+  setOwnMode(owl_mode);
+  setNameMode(name_mode);
 
   button_state = digitalRead(PUSH_BTN);
 
@@ -98,7 +101,7 @@ void buttonOptionsOwl()
         } else {
           owl_mode = 1;
         }
-        toggleModeOwl(owl_mode);
+        setOwnMode(owl_mode);
         delay(50);
       } else if ((push_btn_duration > twoSeconds) && (push_btn_duration <= fiveSeconds)) {
         confirmButtonPress();
@@ -116,8 +119,22 @@ void buttonOptionsName()
 {
   btn_timer = millis();
   idle_timer = millis();
+  
+  if (DEBUG) {
+    Serial.print("btn_timer: ");
+    Serial.println(btn_timer);
+    Serial.print("idle_timer: ");
+    Serial.println(idle_timer);
+  }
+  
   while ((millis() - idle_timer) < 10000) {
     button_state = digitalRead(PUSH_BTN);
+    
+    if (DEBUG) {
+      Serial.print("button_state: ");
+      Serial.println(button_state);
+    }
+  
     if (button_state != BTN_INACTIVE) {
       btn_timer = millis();
       btn_start_time = millis();                              //grab the current count on the clock
@@ -132,7 +149,7 @@ void buttonOptionsName()
         } else {
           name_mode = 1;
         }
-        toggleModeName(name_mode);
+        setNameMode(name_mode);
         delay(10);
       } else if ((push_btn_duration > twoSeconds) && (push_btn_duration <= fiveSeconds)) {
         break;
@@ -144,8 +161,15 @@ void buttonOptionsName()
   }
 }
 
-void toggleModeOwl(int mode) 
+void setOwnMode(int mode) 
 {
+
+//  if (DEBUG) {
+//    Serial.print("setOwnMode(");
+//    Serial.print(mode);
+//    Serial.println(")");
+//  }
+  
   switch (mode) {
     case 1:
       for (int i = 0; i < 20; i++) {
@@ -180,8 +204,15 @@ void toggleModeOwl(int mode)
   }
 }
 
-void toggleModeName(int mode) 
+void setNameMode(int mode) 
 {
+
+//  if (DEBUG) {
+//    Serial.print("setNameMode(");
+//    Serial.print(mode);
+//    Serial.println(")");
+//  }
+  
   switch (mode) {
     case 1:
       for (int i = 20; i < 25; i++) {
@@ -218,42 +249,13 @@ void toggleModeName(int mode)
 
 void confirmButtonPress() 
 {
+ 
+  if (DEBUG) Serial.println("confirmButtonPress()");
+
   for (int i = 0; i <= 10; i++) {
     digitalWrite(LED, HIGH);
     delay(35);
     digitalWrite(LED, LOW);
     delay(35);
   }
-}
-
-void justColor() 
-{
-  //strip.setPixelColor(LED# 0-24, strip.Color(R,G,B));
-  strip.setPixelColor(0, strip.Color(30, 0, 0));
-  //  strip.setPixelColor(1, strip.Color(30,0,0));
-  //  strip.setPixelColor(2, strip.Color(30,0,0));
-  //  strip.setPixelColor(3, strip.Color(30,0,0));
-  //  strip.setPixelColor(4, strip.Color(30,0,0));
-  //  strip.setPixelColor(5, strip.Color(30,0,0));
-  //  strip.setPixelColor(6, strip.Color(30,0,0));
-  //  strip.setPixelColor(7, strip.Color(30,0,0));
-  //  strip.setPixelColor(8, strip.Color(30,0,0));
-  //  strip.setPixelColor(9, strip.Color(30,0,0));
-  //  strip.setPixelColor(10, strip.Color(30,0,0));
-  //  strip.setPixelColor(11, strip.Color(30,0,0));
-  //  strip.setPixelColor(12, strip.Color(30,0,0));
-  //  strip.setPixelColor(13, strip.Color(30,0,0));
-  //  strip.setPixelColor(14, strip.Color(30,0,0));
-  //  strip.setPixelColor(15, strip.Color(30,0,0));
-  //  strip.setPixelColor(16, strip.Color(30,0,0));
-  //  strip.setPixelColor(17, strip.Color(30,0,0));
-  //  strip.setPixelColor(18, strip.Color(30,0,0));
-  //  strip.setPixelColor(19, strip.Color(30,0,0));
-
-  strip.setPixelColor(20, strip.Color(0, 30, 15));
-  //  strip.setPixelColor(21, strip.Color(0,30,15));
-  //  strip.setPixelColor(22, strip.Color(0,30,15));
-  //  strip.setPixelColor(23, strip.Color(0,30,15));
-  //  strip.setPixelColor(24, strip.Color(0,30,15));
-  strip.show();
 }
