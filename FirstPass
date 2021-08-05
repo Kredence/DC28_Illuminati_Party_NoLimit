@@ -13,7 +13,6 @@
 #define BTN_ACTIVE LOW
 #define BTN_INACTIVE HIGH
 #define DEBUG false
-#define BRIGHTNESS 50
 
 // press duration
 const int shortPress = 400;
@@ -22,19 +21,18 @@ const int twoSeconds = 1600;
 const int threeSeconds = 3000;
 const int fiveSeconds = 5000;
 
-// start states
+// inits
 int owl_mode = 4;
 int name_mode = 5;
 int led_start_state = BTN_ACTIVE;       // the current state of the output pin
+int brightness = 50;
 
-// misc
-int button_state;    // where value of reading the pin is stored
-
-// inits
 unsigned long btn_start_time = 0;
 unsigned long btn_timer;
 unsigned long idle_timer;
 unsigned long push_btn_duration = 0;    // tracks the current time the button has been pushed
+
+int button_state;    // where value of reading the pin is stored
 
 // setup NeoPixel 'strip' command
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(LEDs, DATA_PIN, NEO_GRB + NEO_KHZ800);
@@ -52,14 +50,14 @@ void setup()
 
   // NeoPixel (strip) setup commands
   strip.begin();
-  strip.setBrightness(BRIGHTNESS);   
+  strip.setBrightness(brightness);   
   strip.show(); 
 }
 
 void loop()
 {
-  setOwnMode(owl_mode);
-  setNameMode(name_mode);
+  displayOwl(owl_mode);
+  displayName(name_mode);
 
   button_state = digitalRead(PUSH_BTN);
 
@@ -73,7 +71,12 @@ void loop()
     if (push_btn_duration > twoSeconds) {               //We're looking for a button press over two seconds to go into modes
       confirmButtonPress();
       buttonOptionsOwl();
+    } else if (push_btn_duration < twoSeconds) { 
+      brightness = (brightness + 20) % 180;
+      strip.setBrightness(brightness);   
+      strip.show();
     }
+    
     push_btn_duration = 0;
     delay(10);
   }
@@ -101,7 +104,7 @@ void buttonOptionsOwl()
         } else {
           owl_mode = 1;
         }
-        setOwnMode(owl_mode);
+        displayOwl(owl_mode);
         delay(50);
       } else if ((push_btn_duration > twoSeconds) && (push_btn_duration <= fiveSeconds)) {
         confirmButtonPress();
@@ -149,7 +152,7 @@ void buttonOptionsName()
         } else {
           name_mode = 1;
         }
-        setNameMode(name_mode);
+        displayName(name_mode);
         delay(10);
       } else if ((push_btn_duration > twoSeconds) && (push_btn_duration <= fiveSeconds)) {
         break;
@@ -161,11 +164,11 @@ void buttonOptionsName()
   }
 }
 
-void setOwnMode(int mode) 
+void displayOwl(int mode) 
 {
 
 //  if (DEBUG) {
-//    Serial.print("setOwnMode(");
+//    Serial.print("displayOwl(");
 //    Serial.print(mode);
 //    Serial.println(")");
 //  }
@@ -204,11 +207,11 @@ void setOwnMode(int mode)
   }
 }
 
-void setNameMode(int mode) 
+void displayName(int mode) 
 {
 
 //  if (DEBUG) {
-//    Serial.print("setNameMode(");
+//    Serial.print("displayName(");
 //    Serial.print(mode);
 //    Serial.println(")");
 //  }
@@ -252,10 +255,13 @@ void confirmButtonPress()
  
   if (DEBUG) Serial.println("confirmButtonPress()");
 
-  for (int i = 0; i <= 10; i++) {
-    digitalWrite(LED, HIGH);
-    delay(35);
-    digitalWrite(LED, LOW);
-    delay(35);
+  // blink the name so I know it worked
+  for (int i = 0; i <= 3; i++) {
+    displayName(1);
+    delay(100);
+    displayName(2);
+    delay(100);
   }
+
+  displayName(name_mode);
 }
