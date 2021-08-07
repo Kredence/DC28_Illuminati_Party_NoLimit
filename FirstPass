@@ -1,5 +1,5 @@
-//Install the NeoPixel library
-//Board is an Arduino Nano with an ATmega328P (old bootloader)
+// Install the NeoPixel library
+// Board is an Arduino Nano with an ATmega328P (old bootloader)
 
 #include <Adafruit_NeoPixel.h>
 #ifdef __AVR__
@@ -14,6 +14,9 @@
 #define BTN_INACTIVE HIGH
 #define DEBUG false
 
+#define TARGET_OWL 1
+#define TARGET_NAME 2
+
 // press duration
 const int shortPress = 400;
 const int oneSecond = 800;
@@ -25,13 +28,15 @@ const int fiveSeconds = 5000;
 int owl_mode = 4;
 int name_mode = 5;
 int led_start_state = BTN_ACTIVE;       // the current state of the output pin
-int brightness = 50;
+int brightness = 20;
 
+// maor inits
 unsigned long btn_start_time = 0;
 unsigned long btn_timer;
 unsigned long idle_timer;
 unsigned long push_btn_duration = 0;    // tracks the current time the button has been pushed
 
+// misc inits
 int button_state;    // where value of reading the pin is stored
 
 // setup NeoPixel 'strip' command
@@ -59,17 +64,18 @@ void loop()
   displayOwl(owl_mode);
   displayName(name_mode);
 
-  button_state = digitalRead(PUSH_BTN);
+
+  button_state = digitalRead(PUSH_BTN);                     // read button state
 
   if (button_state != BTN_INACTIVE) {
-    btn_start_time = millis();                              //grab the current count on the clock
-    while (button_state == BTN_ACTIVE) {                    //Sit here until the button is released
+    btn_start_time = millis();                              // grab the current count on the clock
+    while (button_state == BTN_ACTIVE) {                    // Sit here until the button is released
       button_state = digitalRead(PUSH_BTN);
     }
 
-    push_btn_duration = (millis() - btn_start_time);    //Calculate how long button was pressed
-    if (push_btn_duration > twoSeconds) {               //We're looking for a button press over two seconds to go into modes
-      confirmButtonPress();
+    push_btn_duration = (millis() - btn_start_time);    // Calculate how long button was pressed
+    if (push_btn_duration > twoSeconds) {               // We're looking for a button press over two seconds to go into modes
+      confirmButtonPress(TARGET_OWL);
       buttonOptionsOwl();
     } else if (push_btn_duration < twoSeconds) { 
       brightness = (brightness + 20) % 180;
@@ -107,7 +113,7 @@ void buttonOptionsOwl()
         displayOwl(owl_mode);
         delay(50);
       } else if ((push_btn_duration > twoSeconds) && (push_btn_duration <= fiveSeconds)) {
-        confirmButtonPress();
+        confirmButtonPress(TARGET_NAME);
         buttonOptionsName();
         break;
       } else {
@@ -250,18 +256,28 @@ void displayName(int mode)
   }
 }
 
-void confirmButtonPress() 
+void confirmButtonPress(int target) 
 {
  
   if (DEBUG) Serial.println("confirmButtonPress()");
 
   // blink the name so I know it worked
   for (int i = 0; i <= 3; i++) {
-    displayName(1);
+    if (target == 1) {
+      displayOwl(1);
+    } else {
+      displayName(1);
+    }
+
     delay(100);
-    displayName(2);
+    if (target == 1) {
+      displayOwl(2);
+    } else {
+      displayName(2);
+    }
     delay(100);
   }
 
   displayName(name_mode);
+  displayOwl(owl_mode);
 }
